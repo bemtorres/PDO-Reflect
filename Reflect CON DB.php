@@ -1,6 +1,7 @@
 <?php 
 
-//SOLO UN ARCHIVO
+if (!isset($rootDir)) $rootDir = $_SERVER['DOCUMENT_ROOT'];
+require_once ($rootDir . "/DB/DB.php");
 
 
 // Carpetas a utilizar
@@ -10,55 +11,22 @@ function Rutador($carpeta){
     }
 }
 
-function Execute($query,$RUTA_BD,$NOMBRE_CLASE_BD){  
-    try {
-        require_once ($RUTA_BD."/".$NOMBRE_CLASE_BD.".php");
-        $cc = $NOMBRE_CLASE_BD::getInstancia();   
-        $rs = $cc->db->prepare($query);
-        $rs->execute();
-        $c = $rs->fetchAll();         
-        return $c;
-    } catch (\Throwable $th) {
-        echo $th;
-    }  
-  
+function Execute($query){
+    $cc = DB::getInstancia();   
+    $rs = $cc->db->prepare($query);
+    $rs->execute();
+    $c = $rs->fetchAll();         
+    return $c;
 }
 
-
-function ShowTables($RUTA_BD,$NOMBRE_CLASE_BD){
+function ShowTables(){
     $stSql = "show tables;";
-    return Execute($stSql,$RUTA_BD,$NOMBRE_CLASE_BD);    
+    return Execute($stSql);    
 }
 
-function DescribeTables($tabla,$RUTA_BD,$NOMBRE_CLASE_BD){
+function DescribeTables($tabla){
     $stSql = "describe $tabla;";
-    return Execute($stSql,$RUTA_BD,$NOMBRE_CLASE_BD);    
-}
-
-//crea el modelo de base dedatos
-function CreateConect($nombre,$ruta,$config){
-    $tab = '    ';
-    $file = fopen("$ruta/$nombre.php", "w");
-    $txt = "<?php \n";
-    $txt .= "class $nombre {\n"; 
-    $txt .= $tab."public \$db;\n";
-    $txt .= $tab."private static \$stHost='$config[0]';\n";
-    $txt .= $tab."private static \$stUsuario='$config[1]';\n";
-    $txt .= $tab."private static \$stClave='$config[2]';\n";
-    $txt .= $tab."private static \$stBd='$config[3]';\n";
-    $txt .= $tab."private static \$instancia;\n\n";
-    $txt .= $tab."public function __construct(){\n";
-    $txt .= $tab.$tab."\$this->db = new PDO(\"mysql:host=\" . self::\$stHost . \";dbname=\" .self::\$stBd,self::\$stUsuario,self::\$stClave, array(PDO::MYSQL_ATTR_INIT_COMMAND => \"SET NAMES utf8\"));\n";
-    $txt .= $tab."}\n\n";
-    $txt .= $tab."public static function getInstancia(){\n";
-    $txt .= $tab.$tab."if($nombre::\$instancia === null){\n";
-    $txt .= $tab.$tab.$tab."$nombre::\$instancia = new $nombre();\n";
-    $txt .= $tab.$tab."}\n";
-    $txt .= $tab.$tab."return self::\$instancia;\n";
-    $txt .= $tab."}\n";
-    $txt .= "}\n";
-    fwrite($file, $txt);
-    fclose($file);
+    return Execute($stSql);    
 }
 
 // Crea las clases con el nombre de la tabla
@@ -70,10 +38,10 @@ function CreateClass($nombre,$columnas,$ruta){
     $txt .= "class $nombre {\n"; 
 
     foreach ($columnas as $col) {
-        $txt .= $tab."private $$col[0]; //".TipoDatosPrint($col) . "\n";
+        $txt .= $tab."private $$col[0]; \n";
     }
     // Constructor
-    $txt .= "\n".$tab."function __construct(";
+    $txt .= "\n" . $tab . "function __construct(";
     
     $total = count($columnas);
     $cont = 1;
@@ -113,15 +81,14 @@ function CreateClass($nombre,$columnas,$ruta){
     fclose($file);
 }
 // Crea las DAO
-function CreateDAO($nombre,$columnas,$ruta,$ruta_modelo,$RUTA_BD,$NOMBRE_CLASE_BD){
-    $DB=$NOMBRE_CLASE_BD;
+function CreateDAO($nombre,$columnas,$ruta,$ruta_modelo){
     $nombre_base = $nombre;
     $nombre = ucwords($nombre);
     $tab = '    ';
 
     $file = fopen("$ruta/$nombre"."DAO.php", "w");
     $txt = "<?php \n";
-    $txt .= "require_once(\"./$RUTA_BD/$NOMBRE_CLASE_BD.php\");\n"; 
+    $txt .= "require_once(\"./DB/DB.php\");\n"; 
     $txt .= "require_once(\"./$ruta_modelo/$nombre.php\");\n"; 
     $txt .= "class $nombre"."DAO {\n";     
     
@@ -129,7 +96,7 @@ function CreateDAO($nombre,$columnas,$ruta,$ruta_modelo,$RUTA_BD,$NOMBRE_CLASE_B
 
     //CREAR
     $txt .= $tab . "public static function agregar(\$nuevo) {\n";
-    $txt .= $tab . $tab . "\$cc=$DB::getInstancia();\n";   
+    $txt .= $tab . $tab . "\$cc=DB::getInstancia();\n";   
     $txt .= $tab . $tab . "\$stSql = \"INSERT INTO $nombre_base (";
     $total = count($columnas);
     $cont = 1;
@@ -158,7 +125,7 @@ function CreateDAO($nombre,$columnas,$ruta,$ruta_modelo,$RUTA_BD,$NOMBRE_CLASE_B
 
     //CREATE AUTOINCREMENTO
     $txt .= $tab . "public static function agregarAuto(\$nuevo) {\n";
-    $txt .= $tab . $tab . "\$cc=$DB::getInstancia();\n";   
+    $txt .= $tab . $tab . "\$cc=DB::getInstancia();\n";   
     $txt .= $tab . $tab . "\$stSql = \"INSERT INTO $nombre_base (";
     $total = count($columnas);
     $cont = 1;
@@ -191,13 +158,13 @@ function CreateDAO($nombre,$columnas,$ruta,$ruta_modelo,$RUTA_BD,$NOMBRE_CLASE_B
     }     
     $txt .= ")\";\n";   
     $txt .= $tab . $tab . "\$rs = \$cc->db->prepare(\$stSql);\n" ; 
-    $txt .= $tab . $tab . "\$params=self::getParamsAuto(\$nuevo);\n"; 
+    $txt .= $tab . $tab . "\$params = self::getParamsAuto(\$nuevo);\n"; 
     $txt .= $tab . $tab . "return \$rs->execute(\$params);\n"; 
     $txt .= $tab . "}\n";
 
     //READ por el primer elemento
     $txt .= $tab . "public static function buscar(\$id) {\n";
-    $txt .= $tab . $tab . "\$cc=$DB::getInstancia();\n";   
+    $txt .= $tab . $tab . "\$cc=DB::getInstancia();\n";   
     $txt .= $tab . $tab . "\$stSql = \"SELECT * FROM $nombre_base WHERE " . $columnas[0][0]. "=:" . $columnas[0][0] . "\";\n";
     $txt .= $tab . $tab ."\$rs = \$cc->db->prepare(\$stSql);\n";
     $txt .= $tab . $tab ."\$rs->execute(array('" . $columnas[0][0] . "' => \$id));\n";
@@ -218,7 +185,7 @@ function CreateDAO($nombre,$columnas,$ruta,$ruta_modelo,$RUTA_BD,$NOMBRE_CLASE_B
 
     //UPDATE
     $txt .= $tab . "public static function actualizar(\$nuevo) {\n";
-    $txt .= $tab . $tab . "\$cc=$DB::getInstancia();\n";   
+    $txt .= $tab . $tab . "\$cc=DB::getInstancia();\n";   
     $txt .= $tab . $tab . "\$stSql = \"UPDATE $nombre_base SET ";
     $total = count($columnas);
     $cont = 1;
@@ -244,7 +211,7 @@ function CreateDAO($nombre,$columnas,$ruta,$ruta_modelo,$RUTA_BD,$NOMBRE_CLASE_B
         
     //DELETE
     $txt .= $tab . "public static function eliminar(\$nuevo){\n";
-    $txt .= $tab . $tab . "\$cc=$DB::getInstancia();\n";   
+    $txt .= $tab . $tab . "\$cc=DB::getInstancia();\n";   
     $txt .= $tab . $tab . "\$stSql = \"DELETE FROM $nombre_base WHERE ". $columnas[0][0] . "=:" . $columnas[0][0] . "\";\n";
     $txt .= $tab . $tab . "\$rs = \$cc->db->prepare(\$stSql);\n";
     $txt .= $tab . $tab . "return \$rs->execute(array('". $columnas[0][0] . "'=>\$nuevo->get". ucwords($columnas[0][0]) . "()));\n";
@@ -253,7 +220,7 @@ function CreateDAO($nombre,$columnas,$ruta,$ruta_modelo,$RUTA_BD,$NOMBRE_CLASE_B
 
     //ALL
     $txt .= $tab . "public static function buscarAll() {\n";
-    $txt .= $tab . $tab . "\$cc=$DB::getInstancia();\n";   
+    $txt .= $tab . $tab . "\$cc=DB::getInstancia();\n";   
     $txt .= $tab . $tab . "\$stSql = \"SELECT * FROM $nombre_base \";\n";
     $txt .= $tab . $tab . "\$rs = \$cc->db->prepare(\$stSql);\n";
     $txt .= $tab . $tab . "\$rs->execute();\n";
@@ -278,7 +245,7 @@ function CreateDAO($nombre,$columnas,$ruta,$ruta_modelo,$RUTA_BD,$NOMBRE_CLASE_B
 
     //total
     $txt .= $tab . "public static function contador() {\n";
-        $txt .= $tab . $tab . "\$cc=$DB::getInstancia();\n";   
+        $txt .= $tab . $tab . "\$cc=DB::getInstancia();\n";   
         $txt .= $tab . $tab . "\$stSql = \"SELECT * FROM $nombre_base\";\n";
         $txt .= $tab . $tab . "\$rs = \$cc->db->prepare(\$stSql);\n";
         $txt .= $tab . $tab . "\$rs->execute();\n";
@@ -313,7 +280,6 @@ function CreateDAO($nombre,$columnas,$ruta,$ruta_modelo,$RUTA_BD,$NOMBRE_CLASE_B
     fwrite($file, $txt);
     fclose($file);
 }
-// comprueba el tipo de datos
 function TipoDatos($col){
     $isNull="SI";
     if($col[2]=="NO"){
@@ -347,93 +313,48 @@ function TipoDatos($col){
     echo "Es null : " . $isNull;
     echo "<br>";
 }
-function TipoDatosPrint($col){
-    $rs = "";
-    $rs .= $col[1]; 
-    if(preg_match("/varchar/",$col[1])){
-        // echo "TIPO Varchar <br>";
-        $resultado =preg_replace("/[^0-9]/", "", $col[1]);
-        // echo "maximo " . $resultado . "<br>";
-        $rs .= " MAX $resultado";
-    }
-    elseif(preg_match("/int/",$col[1])){
-        // echo "Tipo INT <br>";
-        $resultado =preg_replace("/[^0-9]/", "", $col[1]);
-        // echo "maximo " . $resultado . "<br>";
-        $rs .= " MAX $resultado";
-    }
-    elseif(preg_match("/datetime/",$col[1])){
-        // echo "Tipo datetime <br>";            
-    }
-    elseif(preg_match("/time/",$col[1])){
-        // echo "Tipo time <br>";            
-    }
-    elseif(preg_match("/date/",$col[1])){
-        // echo "Tipo date <br>";            
-    }
-    elseif(preg_match("/decimal/",$col[1])){
-        // echo "Tipo decimal <br>";            
-    }
-    $isNull="SI";
-    if($col[2]=="NO"){
-        $isNull="NO";
-    }
-    $rs .= " Null=" . $isNull; 
-    $rs .= " " . $col[4] . " " . $col[5];
 
-    return $rs;
+
+// RUN
+
+// Rutas de las carpetas
+$RUTA_MODELO="Modelo";
+$RUTA_DAO="DAO";
+//Creador de Carpetas
+Rutador($RUTA_MODELO);
+Rutador($RUTA_DAO);
+
+$tablas = ShowTables(); //Obtiene todas las tablas
+foreach ($tablas as $tabla) {    
+    // echo $tabla[0] . "<br>"; //Imprime todas  
+    $columnas = DescribeTables($tabla[0]); // todas las columnas  
+    
+    //Crear Modelo
+    CreateClass($tabla[0],$columnas,$RUTA_MODELO);
+
+    //Crear DAO
+    CreateDAO($tabla[0],$columnas,$RUTA_DAO,$RUTA_MODELO);
+
+    //todos los atributos de la base datos
+    foreach ($columnas as $col) { 
+        // echo $col[0] . "  <br>";      
+        echo " " . $col[0] . "    :  ". $col[1] . "    :  ". $col[2] .  "    :  ". $col[3] ." : " . $col[5] ." <br>";          
+        TipoDatos($col);       
+        echo "<br>";
+    }  
 }
 
-// Ejecuta todo el programa
-// $config = configuracion de la conexion a base de datos
-function Reflect($config){  
-    // 1 Nombre carpeta conexion a base de datos
-    $RUTA_BD="DB";           //Mayuscula (NO modificar)
-    $NOMBRE_CLASE_BD="DB";   //Mayuscula (No modificar)
-    Rutador($RUTA_BD);
-    CreateConect($NOMBRE_CLASE_BD,$RUTA_BD,$config);
 
-    // 2 Rutas de las carpetas
-    $RUTA_MODELO="Modelo";
-    $RUTA_DAO="DAO";
-    //Creador de Carpetas
-    Rutador($RUTA_MODELO);
-    Rutador($RUTA_DAO);
+$RUTA_VIEW="View"; //vista formulario simple
+Rutador($RUTA_VIEW);
 
-    // 3 reflejo de tablas
-    $tablas = ShowTables($RUTA_BD,$NOMBRE_CLASE_BD); //Obtiene todas las tablas
-    foreach ($tablas as $tabla) {    
-        // echo $tabla[0] . "<br>"; //Imprime todas  
-        $columnas = DescribeTables($tabla[0],$RUTA_BD,$NOMBRE_CLASE_BD); // todas las columnas  
-        
-        //4 creacion de archivos
-            //4.1 Crear Modelo
-            CreateClass($tabla[0],$columnas,$RUTA_MODELO);
-            //4.2 Crear DAO
-            CreateDAO($tabla[0],$columnas,$RUTA_DAO,$RUTA_MODELO,$RUTA_BD,$NOMBRE_CLASE_BD);
+$RUTA_CONTROLADORES="Contralador"; //controladores a full
+Rutador($RUTA_CONTROLADORES);
 
 
 
-        //Experimento todos los atributos de la base datos
-        // foreach ($columnas as $col) { 
-        //     // echo $col[0] . "  <br>";      
-        //     echo " " . $col[0] . "    :  ". $col[1] . "    :  ". $col[2] .  "    :  ". $col[3] ." : " . $col[5] ." <br>";          
-            
 
-        //     TipoDatos($col);       
-        //     echo "<br>";
-        // }  
-    }
-
-    $RUTA_VIEW="View"; //vista formulario simple
-    Rutador($RUTA_VIEW);
-
-    $RUTA_CONTROLADORES="Contralador"; //controladores a full
-    Rutador($RUTA_CONTROLADORES);
-
-}
-
-// RUN() - Configuración
+// <input type="text" >
 
 
 
