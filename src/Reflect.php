@@ -268,13 +268,13 @@ function CreateDAO($nombre,$columnas,$ruta,$ruta_modelo,$RUTA_BD,$NOMBRE_CLASE_B
 
     //total
     $txt .= $tab . "public static function contador() {\n";
-        $txt .= $tab . $tab . "\$cc=$DB::getInstancia();\n";   
-        $txt .= $tab . $tab . "\$stSql = \"SELECT * FROM $nombre_base\";\n";
-        $txt .= $tab . $tab . "\$rs = \$cc->db->prepare(\$stSql);\n";
-        $txt .= $tab . $tab . "\$rs->execute();\n";
-        $txt .= $tab . $tab . "\$cont = count(\$rs->fetchAll());\n";
-        $txt .= $tab . $tab . "return \$cont; \n"; 
-        $txt .= $tab . "}\n";   
+    $txt .= $tab . $tab . "\$cc=$DB::getInstancia();\n";   
+    $txt .= $tab . $tab . "\$stSql = \"SELECT * FROM $nombre_base\";\n";
+    $txt .= $tab . $tab . "\$rs = \$cc->db->prepare(\$stSql);\n";
+    $txt .= $tab . $tab . "\$rs->execute();\n";
+    $txt .= $tab . $tab . "\$cont = count(\$rs->fetchAll());\n";
+    $txt .= $tab . $tab . "return \$cont; \n"; 
+    $txt .= $tab . "}\n";   
     
     // Configuracion Params       
     //normal params 
@@ -288,17 +288,16 @@ function CreateDAO($nombre,$columnas,$ruta,$ruta_modelo,$RUTA_BD,$NOMBRE_CLASE_B
 
     //Autoincrement params
     $txt .= $tab . "public static function getParamsAuto(\$nuevo){\n";
-        $txt .= $tab . $tab . "\$params = array();\n"; 
-        $cont = 1;
-        foreach ($columnas as $col) {
-            if($cont!=1){
-                $txt .= $tab . $tab . "\$params['$col[0]'] = \$nuevo->get" . ucwords($col[0]) . "();\n";
-            }
-            $cont +=1;
+    $txt .= $tab . $tab . "\$params = array();\n"; 
+    $cont = 1;
+    foreach ($columnas as $col) {
+        if($cont!=1){
+            $txt .= $tab . $tab . "\$params['$col[0]'] = \$nuevo->get" . ucwords($col[0]) . "();\n";
         }
-        $txt .= $tab . $tab . "return \$params;\n";  
-        $txt .= $tab . "}\n";    
-    
+        $cont +=1;
+    }
+    $txt .= $tab . $tab . "return \$params;\n";  
+    $txt .= $tab . "}\n";    
     $txt .= '}';
     fwrite($file, $txt);
     fclose($file);
@@ -583,9 +582,7 @@ function index($tablas,$ruta_view){
         $txt .=$tab.$tab.$tab."<td><a href=\"$ruta_view/view".ucwords($tabla[0]).".php\" target=\"_blank\">$tabla[0]</a></td>\n";
         $txt .=$tab.$tab.$tab."<td><a  href=\"$ruta_view/allview".ucwords($tabla[0]).".php\" target=\"_blank\">ALL</a></td>\n";
         $txt .=$tab.$tab."</tr>\n";
-    }       
-    
-    $txt .=$tab.$tab."<?php } ?>\n";    
+    }    
     $txt .=$tab."</tbody>\n";  
     $txt .="</table>\n";
     fwrite($file, $txt);
@@ -628,11 +625,5 @@ function Reflect($config){
     index($tablas,$RUTA_VIEW);
     echo "<a href=\"index.html\">Menu</a>";
 }
-
-
-
-
-
-
 
 ?>

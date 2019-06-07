@@ -2,11 +2,11 @@
 
 require_once("Reflect.php");
 
-// 0 Configuracion PDO
+// 0 Configuracion PDO mysql y sqlserver
 $config = array();
-$config[0] ='localhost';  //Host
-$config[1] ='root';       //Usuario
-$config[2] ='';           //Contraseña
-$config[3] ='nombre_bd';//Nombre Base de Datos
+$config[0] ='www.cittsb.cl';  //Host
+$config[1] ='benjamin';       //Usuario
+$config[2] ='benja';           //Contraseña
+$config[3] ='duoc';//Nombre Base de Datos
 Reflect($config);
 ?>
