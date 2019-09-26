@@ -111,8 +111,11 @@ function CreateDAO($nombre,$columnas,$ruta,$ruta_modelo,$RUTA_BD,$NOMBRE_CLASE_B
 
     $file = fopen("$ruta/$nombre"."DAO.php", "w");
     $txt = "<?php \n";
-    $txt .= "require_once(\"../$RUTA_BD/$NOMBRE_CLASE_BD.php\");\n"; 
-    $txt .= "require_once(\"../$ruta_modelo/$nombre.php\");\n"; 
+    
+    $txt .="if (!isset(\$rootDir)){\n";
+    $txt .= $tab."\$rootDir = \$_SERVER['DOCUMENT_ROOT'];\n}\n";  
+    $txt .= "require_once (\$rootDir .\"/$RUTA_BD/$NOMBRE_CLASE_BD.php\");\n"; 
+    $txt .= "require_once (\$rootDir .\"/$ruta_modelo/$nombre.php\");\n"; 
     $txt .= "class $nombre"."DAO {\n";     
     
     // CRUD
@@ -172,7 +175,7 @@ function CreateDAO($nombre,$columnas,$ruta,$ruta_modelo,$RUTA_BD,$NOMBRE_CLASE_B
             $cont +=1;
             continue;
         }else{
-            $txt .= $col[0];     
+            $txt .= ":".$col[0];     
             if($cont!=$total){
                 $txt .=",";
                 $cont +=1;
@@ -380,7 +383,9 @@ function ViewFormularioAll($nombre,$columnas,$ruta_view,$ruta_dao){
     $file = fopen("$ruta_view/all$nombreWeb.php", "w");
 
     $txt = "<?php\n";
-    $txt .= $tab."require_once(\"../$ruta_d\");\n"; 
+    $txt .="if (!isset(\$rootDir)){\n";
+    $txt .= $tab."\$rootDir = \$_SERVER['DOCUMENT_ROOT'];\n}\n";  
+    $txt .= $tab."require_once (\$rootDir . \"/$ruta_d\");\n"; 
     $txt .= $tab."\$datos = ". ucwords($nombre) ."DAO::buscarAll();\n"; 
     $txt .= "?>\n";
     $txt .= "<form action=\"\" method=\"post\">\n";    
@@ -504,7 +509,9 @@ function CreateControlador($nombre,$columnas,$ruta_controlador,$ruta_dao){
     $file = fopen("$ruta_controlador/$nombreWeb.php", "w");
 
     $txt = "<?php\n";
-    $txt .= "require_once(\"../$ruta_d\");\n\n"; 
+    $txt .="if (!isset(\$rootDir)){\n";
+    $txt .= $tab."\$rootDir = \$_SERVER['DOCUMENT_ROOT'];\n}\n";  
+    $txt .= "require_once(\$rootDir . \"/$ruta_d\");\n\n"; 
     $txt .= "if(isset(\$_POST['opcion'])){\n";
     $txt .= $tab."\$opc=htmlspecialchars(\$_POST['opcion']);\n";
     $txt .= $tab."if(\$opc==\"agregar\"){\n\n";
@@ -603,7 +610,7 @@ function Reflect($config){
     $RUTA_MODELO="Modelo";
     $RUTA_DAO="DAO";
     $RUTA_VIEW="View"; //vista formulario simple
-    $RUTA_CONTROLADOR="Contralador";
+    $RUTA_CONTROLADOR="Controlador";
     Rutador($RUTA_MODELO);
     Rutador($RUTA_DAO);
     Rutador($RUTA_VIEW);
