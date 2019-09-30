@@ -1,11 +1,30 @@
 <?php 
+
+function configuracion($nombreArchivo){
+    $archivo = fopen($nombreArchivo, "r");
+    $texto = array();
+    while(!feof($archivo)) {
+        $linea = fgets($archivo);
+        $contenido = explode("=",$linea);
+        if(isset($contenido[1])){
+            $contenido[1] = trim($contenido[1]);
+            $texto[$contenido[0]]=$contenido[1];
+        }else{
+            $texto[$contenido[0]]="";
+        }
+    }
+    fclose($archivo);
+    return $texto;
+}
+
+
 // Carpetas a utilizar
-function Rutador($carpeta){
+function rutador($carpeta){
     if (!file_exists($carpeta)) {
         mkdir($carpeta, 0777, true);
     }
 }
-function Execute($query,$RUTA_BD,$NOMBRE_CLASE_BD){  
+function execute($query,$RUTA_BD,$NOMBRE_CLASE_BD){  
     try {
         require_once ($RUTA_BD."/".$NOMBRE_CLASE_BD.".php");
         $cc = $NOMBRE_CLASE_BD::getInstancia();   
@@ -18,25 +37,25 @@ function Execute($query,$RUTA_BD,$NOMBRE_CLASE_BD){
     }  
   
 }
-function ShowTables($RUTA_BD,$NOMBRE_CLASE_BD){
+function showTables($RUTA_BD,$NOMBRE_CLASE_BD){
     $stSql = "show tables;";
-    return Execute($stSql,$RUTA_BD,$NOMBRE_CLASE_BD);    
+    return execute($stSql,$RUTA_BD,$NOMBRE_CLASE_BD);    
 }
-function DescribeTables($tabla,$RUTA_BD,$NOMBRE_CLASE_BD){
+function describeTables($tabla,$RUTA_BD,$NOMBRE_CLASE_BD){
     $stSql = "describe $tabla;";
-    return Execute($stSql,$RUTA_BD,$NOMBRE_CLASE_BD);    
+    return execute($stSql,$RUTA_BD,$NOMBRE_CLASE_BD);    
 }
 //crea el modelo de base dedatos
-function CreateConect($nombre,$ruta,$config){
+function createConect($nombre,$ruta,$config){
     $tab = "\t";
     $file = fopen("$ruta/$nombre.php", "w");
     $txt = "<?php \n";
     $txt .= "class $nombre {\n"; 
     $txt .= $tab."public \$db;\n";
-    $txt .= $tab."private static \$stHost='$config[0]';\n";
-    $txt .= $tab."private static \$stUsuario='$config[1]';\n";
-    $txt .= $tab."private static \$stClave='$config[2]';\n";
-    $txt .= $tab."private static \$stBd='$config[3]';\n";
+    $txt .= $tab."private static \$stHost='".$config['DB_HOST']."';\n";
+    $txt .= $tab."private static \$stUsuario='".$config['DB_USERNAME']."';\n";
+    $txt .= $tab."private static \$stClave='".$config['DB_PASSWORD']."';\n";
+    $txt .= $tab."private static \$stBd='".$config['DB_DATABASE']."';\n";
     $txt .= $tab."private static \$instancia;\n\n";
     $txt .= $tab."public function __construct(){\n";
     $txt .= $tab.$tab."\$this->db = new PDO(\"mysql:host=\" . self::\$stHost . \";dbname=\" .self::\$stBd,self::\$stUsuario,self::\$stClave, array(PDO::MYSQL_ATTR_INIT_COMMAND => \"SET NAMES utf8\"));\n";
@@ -52,7 +71,7 @@ function CreateConect($nombre,$ruta,$config){
     fclose($file);
 }
 // Crea las clases con el nombre de la tabla
-function CreateClass($nombre,$columnas,$ruta){
+function createClass($nombre,$columnas,$ruta){
     $nombre = ucwords($nombre);
     $tab = "\t";
     $file = fopen("$ruta/$nombre.php", "w");
@@ -60,7 +79,7 @@ function CreateClass($nombre,$columnas,$ruta){
     $txt .= "class $nombre {\n"; 
 
     foreach ($columnas as $col) {
-        $txt .= $tab."private $$col[0]; //".TipoDatosPrint($col) . "\n";
+        $txt .= $tab."private $$col[0]; //".tipoDatosPrint($col) . "\n";
     }
     // Constructor
     $txt .= "\n".$tab."function __construct(";
@@ -103,7 +122,7 @@ function CreateClass($nombre,$columnas,$ruta){
     fclose($file);
 }
 // Crea las DAO
-function CreateDAO($nombre,$columnas,$ruta,$ruta_modelo,$RUTA_BD,$NOMBRE_CLASE_BD){
+function createDAO($nombre,$columnas,$ruta,$ruta_modelo,$RUTA_BD,$NOMBRE_CLASE_BD){
     $DB=$NOMBRE_CLASE_BD;
     $nombre_base = $nombre;
     $nombre = ucwords($nombre);
@@ -306,7 +325,7 @@ function CreateDAO($nombre,$columnas,$ruta,$ruta_modelo,$RUTA_BD,$NOMBRE_CLASE_B
     fclose($file);
 }
 // comprueba el tipo de datos
-function TipoDatos($col){
+function tipoDatos($col){
     $isNull="SI";
     if($col[2]=="NO"){
         $isNull="NO";
@@ -339,7 +358,7 @@ function TipoDatos($col){
     echo "Es null : " . $isNull;
     echo "<br>";
 }
-function TipoDatosPrint($col){
+function tipoDatosPrint($col){
     $rs = "";
     $rs .= $col[1]; 
     if(preg_match("/varchar/",$col[1])){
@@ -376,7 +395,7 @@ function TipoDatosPrint($col){
     return $rs;
 }
 //Escribe las tablas formularios
-function ViewFormularioAll($nombre,$columnas,$ruta_view,$ruta_dao){
+function viewFormularioAll($nombre,$columnas,$ruta_view,$ruta_dao){
     $ruta_d = $ruta_dao . "/".ucwords($nombre)."DAO.php";
     $nombreWeb = "view" . ucwords($nombre);    
     $tab = "\t";
@@ -389,7 +408,7 @@ function ViewFormularioAll($nombre,$columnas,$ruta_view,$ruta_dao){
     $txt .= $tab."\$datos = ". ucwords($nombre) ."DAO::buscarAll();\n"; 
     $txt .= "?>\n";
     $txt .= "<form action=\"\" method=\"post\">\n";    
-    $txt .="<table>\n";
+    $txt .="<table BORDER='1'>\n";
     $txt .=$tab."<thead>\n";
     $txt .=$tab.$tab."<tr>\n";
     foreach ($columnas as $col) {
@@ -414,7 +433,7 @@ function ViewFormularioAll($nombre,$columnas,$ruta_view,$ruta_dao){
     fclose($file);    
 }
 //Escribe los formularios
-function ViewFormulario($nombre,$columnas,$ruta_view,$ruta_controlador){
+function viewFormulario($nombre,$columnas,$ruta_view,$ruta_controlador){
     $nombreWeb = "view" . ucwords($nombre);
     
     $tab = "\t";
@@ -422,7 +441,7 @@ function ViewFormulario($nombre,$columnas,$ruta_view,$ruta_controlador){
 
     $txt = "<form action=\"../$ruta_controlador/C".strtolower($nombre).".php\" method=\"post\">\n";
     foreach ($columnas as $col) {
-        $txt .= $tab. AtributeFormatoFormulario($col) . "<br>\n";
+        $txt .= $tab. atributeFormatoFormulario($col) . "<br>\n";
     }
     // btn agregar
     $txt .= $tab."<input type=\"submit\" value=\"agregar\" name=\"opcion\">\n";
@@ -439,7 +458,7 @@ function ViewFormulario($nombre,$columnas,$ruta_view,$ruta_controlador){
     fclose($file);    
 }
 //Que tipo es el atributo de BD (varchar,int,datetime,date,time,decimal)
-function AtributeType($n){
+function atributeType($n){
     if(preg_match("/varchar/",$n)){
         return "varchar";
     }
@@ -462,16 +481,16 @@ function AtributeType($n){
     }
 }
 //Largo del atributo
-function AtributeLen($n){
+function atributeLen($n){
     return preg_replace("/[^0-9]/", "", $n);
 }
 //Atributo de bd TO formulario HTML
-function AtributeFormatoFormulario($col){
-    $tipo = AtributeType($col[1]);
+function atributeFormatoFormulario($col){
+    $tipo = atributeType($col[1]);
     $input = "";
     switch ($tipo) {
         case 'varchar':
-            if(AtributeLen($col[1])>200){
+            if(atributeLen($col[1])>200){
                 //textarea
                 $input="<textarea name=\"".$col[0] ."\" id=\"".$col[0] ."\" cols=\"30\" rows=\"10\" placeholder=\"".$col[0] ."\"></textarea>";
             }else{
@@ -501,7 +520,7 @@ function AtributeFormatoFormulario($col){
     }
     return $input;
 }
-function CreateControlador($nombre,$columnas,$ruta_controlador,$ruta_dao){
+function createControlador($nombre,$columnas,$ruta_controlador,$ruta_dao){
     $claseDAO = ucwords($nombre)."DAO"; //usar para los metodos STATICOS
     $ruta_d = $ruta_dao . "/".$claseDAO.".php";
     $nombreWeb = "C" . strtolower($nombre);    
@@ -598,39 +617,47 @@ function index($tablas,$ruta_view){
 
 // Ejecuta todo el programa
 // $config = configuracion de la conexión a base de datos
-function Reflect($config){  
-    // 1 Nombre carpeta conexi+on a base de datos
+function start(){
+    // 0 Configuracion ahora de un archivo
+    $config = configuracion("config");  
+    // 1 Nombre carpeta conexión a base de datos
     $RUTA_BD="DB";           //Mayuscula (NO modificar)
     $NOMBRE_CLASE_BD="DB";   //Mayuscula (No modificar)
-    Rutador($RUTA_BD);
-    CreateConect($NOMBRE_CLASE_BD,$RUTA_BD,$config);
-    echo "Controlador Ok <br>";
+    rutador($RUTA_BD);
+    createConect($NOMBRE_CLASE_BD,$RUTA_BD,$config);
+    echo '<strong>Nombre Proyecto</strong> '.$config['APP_NAME'].'<br>';
+    echo "Conexión Ok <br>";
 
     // 2 Rutas de las carpetas
     $RUTA_MODELO="Modelo";
     $RUTA_DAO="DAO";
     $RUTA_VIEW="View"; //vista formulario simple
     $RUTA_CONTROLADOR="Controlador";
-    Rutador($RUTA_MODELO);
-    Rutador($RUTA_DAO);
-    Rutador($RUTA_VIEW);
-    Rutador($RUTA_CONTROLADOR);
+    rutador($RUTA_MODELO);
+    rutador($RUTA_DAO);
+    rutador($RUTA_VIEW);
+    rutador($RUTA_CONTROLADOR);
     echo "Rutadores Ok <br>";
 
     // 3 reflejo de tablas
-    $tablas = ShowTables($RUTA_BD,$NOMBRE_CLASE_BD); //Obtiene todas las tablas
+    $tablas = showTables($RUTA_BD,$NOMBRE_CLASE_BD); //Obtiene todas las tablas
     foreach ($tablas as $tabla) {    
-        $columnas = DescribeTables($tabla[0],$RUTA_BD,$NOMBRE_CLASE_BD); // todas las columnas  
+        $columnas = describeTables($tabla[0],$RUTA_BD,$NOMBRE_CLASE_BD); // todas las columnas  
         //4 creacion de archivos
-        CreateClass($tabla[0],$columnas,$RUTA_MODELO);
-        CreateDAO($tabla[0],$columnas,$RUTA_DAO,$RUTA_MODELO,$RUTA_BD,$NOMBRE_CLASE_BD);
-        ViewFormulario($tabla[0],$columnas,$RUTA_VIEW,$RUTA_CONTROLADOR);
-        ViewFormularioAll($tabla[0],$columnas,$RUTA_VIEW,$RUTA_DAO);       
-        CreateControlador($tabla[0],$columnas,$RUTA_CONTROLADOR,$RUTA_DAO);
+        createClass($tabla[0],$columnas,$RUTA_MODELO);
+        createDAO($tabla[0],$columnas,$RUTA_DAO,$RUTA_MODELO,$RUTA_BD,$NOMBRE_CLASE_BD);
+        viewFormulario($tabla[0],$columnas,$RUTA_VIEW,$RUTA_CONTROLADOR);
+        viewFormularioAll($tabla[0],$columnas,$RUTA_VIEW,$RUTA_DAO);       
+        createControlador($tabla[0],$columnas,$RUTA_CONTROLADOR,$RUTA_DAO);
     }
     echo "Finalizo Ok <br><br><br><br><br>";
     index($tablas,$RUTA_VIEW);
     echo "<a href=\"index.html\">Menu</a>";
 }
+
+
+// Comienza la ejecución
+start();
+
 
 ?>
