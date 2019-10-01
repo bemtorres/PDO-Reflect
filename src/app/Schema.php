@@ -15,21 +15,21 @@ class Diccionario{
                 break;
             case 'nn':
                 return 'NOT NULL';
+                break;
             case 'int':
-                $salida = 'INT';
+                return 'INT';
+                break;
+            case 'unique':
+                return 'UNIQUE';
                 break;
             case 'date':
-                $salida = 'DATE';
+                return 'DATE';
                 break;
             case 'datetime':
-                $salida = 'DATETIME';
+                return 'DATETIME';
                 break;
             case 'time':
-                $salida = 'TIME';
-                break;
-
-            case 'profe':
-                $salida = 'INT';
+                return 'TIME';
                 break;
             case ('string' || 'texto' ):
                 $salida = 'VARCHAR';
@@ -39,14 +39,10 @@ class Diccionario{
                 }else{
                     $c ="(".$this->largoTexto.")";
                 }
-                $salida .= $c;                
-                break;
-            
-            default:
-                $salida ="VARCHAR(500) NULL"; 
+                $salida .= $c;
+                return $salida;                
                 break;
         }
-        return $salida;
     }
 
     public function condicion($condicion){
@@ -101,14 +97,13 @@ class Schema extends Diccionario{
         $sql .=");";
         $this->scripts = $sql;
         // return $sql;
-
     }  
 
     public function scripts(){
         return $this->scripts;
     }
 
-    public function autoIncremet($nombreColumna = ""){
+    public function autoIncrement($nombreColumna = ""){
         if($nombreColumna!=""){
             return "ALTER TABLE $this->tabla CHANGE COLUMN `$nombreColumna` `$nombreColumna` INT(11) NOT NULL AUTO_INCREMENT ;";
         }else{
@@ -166,19 +161,19 @@ $u = new Schema('usuario');
 $u->atributo([
     'id_usuario' => 'pk',
     'id_tipo_usuario' => 'int',
-    'nombres' => 'string|max=100',
+    'nombres' => 'texto|max=123',
     'apellidos' => 'string',
-    'FECHA' => 'date'
+    'FECHA' => 'datetime'
     ]
 );
 echo $u->scripts();
 echo "<br><br>";
-echo $u->autoIncremet();
+echo $u->autoIncrement('id_tipo_usuario');
 
 $t = new Schema('tipo_usuario');
 $t->atributo([
-    'id_tipo_usuario' => 'pk|auto',
-    'nombre_tipo' => 'texto',
+    'id_tipo_usuario' => 'pk',
+    'nombre_tipo' => 'string|max=',
     'activo' => 'int'
  ]);
  
@@ -188,7 +183,9 @@ echo $t->scripts();
 echo "<br><br>";
 echo $u->foranea($t);
 echo "<br><br>";
-echo $u->alterar('nombres');
+// echo $u->alterar([ 
+//     'nombres' => 'texto|max=200'
+//  ]);
 // echo $u->foranea($t,'id_persona');
 echo "<br><br>";
 

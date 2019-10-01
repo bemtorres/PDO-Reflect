@@ -45,7 +45,7 @@ function showTables($RUTA_BD,$NOMBRE_CLASE_BD,$config){
         From Information_schema.Tables
         Where Table_type = 'BASE TABLE' and Objectproperty 
         (Object_id(Table_name), 'IsMsShipped') = 0
-        order by 'Table name'";
+        order by 'Table name';";
     }
     
     return execute($stSql,$RUTA_BD,$NOMBRE_CLASE_BD);    

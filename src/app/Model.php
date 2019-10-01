@@ -79,12 +79,12 @@ $persona = new Persona();
 
 // print_r($persona);
 
-// $arreglo = array();
-// $arreglo['id_persona'] = 1;
-// $arreglo['nombre'] ='Benjamin Mora';
-// $arreglo['estado'] = 1;
-// $arreglo['fecha_at'] = '2019-09-30';
-// $persona->save($arreglo);
+$arreglo = array();
+$arreglo['id_persona'] = 1;
+$arreglo['nombre'] ='Benjamin Mora';
+$arreglo['estado'] = 1;
+$arreglo['fecha_at'] = '2019-09-30';
+$persona->save($arreglo);
 
 
 $persona->save(array(
