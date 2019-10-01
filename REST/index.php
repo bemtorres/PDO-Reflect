@@ -11,7 +11,7 @@ $router = new Router($_SERVER['REQUEST_URI']);
 
 $router->add('/', function ()
 {
-	return '<h1>API USUARIOS</h1>';
+	return  "hola";
 });
 
 // $router->add('/productos', 'ProductsController::index');

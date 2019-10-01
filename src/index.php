@@ -37,12 +37,25 @@ function execute($query,$RUTA_BD,$NOMBRE_CLASE_BD){
     }  
   
 }
-function showTables($RUTA_BD,$NOMBRE_CLASE_BD){
-    $stSql = "show tables;";
+function showTables($RUTA_BD,$NOMBRE_CLASE_BD,$config){
+    if($config['DB_CONNECTION']=='mysql'){
+        $stSql = "show tables;";
+    }elseif($config['DB_CONNECTION']=='sqlserver'){
+        $stSql = "Select Table_name as 'Table name'
+        From Information_schema.Tables
+        Where Table_type = 'BASE TABLE' and Objectproperty 
+        (Object_id(Table_name), 'IsMsShipped') = 0
+        order by 'Table name'";
+    }
+    
     return execute($stSql,$RUTA_BD,$NOMBRE_CLASE_BD);    
 }
-function describeTables($tabla,$RUTA_BD,$NOMBRE_CLASE_BD){
-    $stSql = "describe $tabla;";
+function describeTables($tabla,$RUTA_BD,$NOMBRE_CLASE_BD,$config){
+    if($config['DB_CONNECTION']=='mysql'){
+        $stSql = "describe $tabla;";
+    }elseif($config['DB_CONNECTION']=='sqlserver'){
+        $stSql = "EXEC sp_help '[$tabla]';";
+    }
     return execute($stSql,$RUTA_BD,$NOMBRE_CLASE_BD);    
 }
 //crea el modelo de base dedatos
@@ -58,7 +71,16 @@ function createConect($nombre,$ruta,$config){
     $txt .= $tab."private static \$stBd='".$config['DB_DATABASE']."';\n";
     $txt .= $tab."private static \$instancia;\n\n";
     $txt .= $tab."public function __construct(){\n";
-    $txt .= $tab.$tab."\$this->db = new PDO(\"mysql:host=\" . self::\$stHost . \";dbname=\" .self::\$stBd,self::\$stUsuario,self::\$stClave, array(PDO::MYSQL_ATTR_INIT_COMMAND => \"SET NAMES utf8\"));\n";
+
+    // tipo de conexión
+    if($config['DB_CONNECTION']=='mysql'){
+        $txt .= $tab.$tab."\$this->db = new PDO(\"mysql:host=\" . self::\$stHost . \";dbname=\" .self::\$stBd,self::\$stUsuario,self::\$stClave, array(PDO::MYSQL_ATTR_INIT_COMMAND => \"SET NAMES utf8\"));\n";
+    
+    }elseif($config['DB_CONNECTION']=='sqlserver'){
+        $txt .= $tab.$tab."\$this->db = new PDO(\"sqlsrv:Server=\"  . self::\$stHost . \";Database=\" . self::\$stBd,self::\$stUsuario,self::\$stClave);\n";
+        $txt .= $tab.$tab."\$this->db->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );\n"; 
+    }
+   
     $txt .= $tab."}\n\n";
     $txt .= $tab."public static function getInstancia(){\n";
     $txt .= $tab.$tab."if($nombre::\$instancia === null){\n";
@@ -440,6 +462,8 @@ function viewFormulario($nombre,$columnas,$ruta_view,$ruta_controlador){
     $file = fopen("$ruta_view/$nombreWeb.php", "w");
 
     $txt = "<form action=\"../$ruta_controlador/C".strtolower($nombre).".php\" method=\"post\">\n";
+    $txt .= $tab."<input type=\"hidden\" hidden value=\"_token\" name=\"_token\">\n";
+   
     foreach ($columnas as $col) {
         $txt .= $tab. atributeFormatoFormulario($col) . "<br>\n";
     }
@@ -527,7 +551,7 @@ function createControlador($nombre,$columnas,$ruta_controlador,$ruta_dao){
     $tab = "\t";
     $file = fopen("$ruta_controlador/$nombreWeb.php", "w");
 
-    $txt = "<?php\n";
+    $txt = "<?php\nsession_start();\n";
     $txt .="if (!isset(\$rootDir)){\n";
     $txt .= $tab."\$rootDir = \$_SERVER['DOCUMENT_ROOT'];\n}\n";  
     $txt .= "require_once(\$rootDir . \"/$ruta_d\");\n\n"; 
@@ -640,9 +664,15 @@ function start(){
     echo "Rutadores Ok <br>";
 
     // 3 reflejo de tablas
-    $tablas = showTables($RUTA_BD,$NOMBRE_CLASE_BD); //Obtiene todas las tablas
+    $tablas = showTables($RUTA_BD,$NOMBRE_CLASE_BD,$config); //Obtiene todas las tablas
+    
+
     foreach ($tablas as $tabla) {    
-        $columnas = describeTables($tabla[0],$RUTA_BD,$NOMBRE_CLASE_BD); // todas las columnas  
+        $columnas = describeTables($tabla[0],$RUTA_BD,$NOMBRE_CLASE_BD,$config); // todas las columnas  
+        // print_r($columnas);
+        // var_dump($columnas);
+        // return;
+        echo "<br>";
         //4 creacion de archivos
         createClass($tabla[0],$columnas,$RUTA_MODELO);
         createDAO($tabla[0],$columnas,$RUTA_DAO,$RUTA_MODELO,$RUTA_BD,$NOMBRE_CLASE_BD);
