@@ -1,8 +1,30 @@
-# PDO-Reflect
-MYSQL to Class
+# Crea una estructura MVC con solo agregar la base de datos MYSQL
 
-##Parte del Proyecto PDO-CRUD bemtorres.win/PDO-CRUD/documentation.html
+*PDO-Reflect*
 
-puedes crear las clases del modelo de base de datos como tambien su CRUD.
+## Instrucciones
 
-Licencia "Comida Comida Comida"
+En el archivo .env agregar las credenciales
+
+```
+APP_NAME=
+
+DB_CONNECTION=mysql
+DB_HOST=localhost
+DB_PORT=3306
+DB_DATABASE=
+DB_USERNAME=
+DB_PASSWORD=
+```
+
+## Estructura
+
+Correr en el navegador el index.php, se creará un reflejo de la base de datos y Listo
+
+
+| Estructura | Descripción |
+| -- | -- |
+| Modelo | Crea modelos en php a partir de la base de datos |
+| DAO | Crea el CRUD de cada tabla |
+| DB | Conexion interna a la base de datos |
+| View | Crea una pequeña estructura en HTML y una tabla para ver los datos |
